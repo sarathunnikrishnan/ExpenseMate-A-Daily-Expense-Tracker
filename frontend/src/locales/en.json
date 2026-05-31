@@ -1,0 +1,47 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "budgets": "Budgets",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": {
+      "title": "Appearance & Preferences",
+      "theme": "Theme",
+      "themeDesc": "Toggle between Light and Dark mode",
+      "darkMode": "Dark Mode",
+      "lightMode": "Light Mode"
+    },
+    "currency": {
+      "symbol": "Currency Symbol",
+      "note": "Important Note: Changing the currency symbol only changes how values are visually displayed. It does not perform any automatic currency conversion on your historical transaction data."
+    },
+    "date": {
+      "format": "Date Format"
+    },
+    "language": {
+      "title": "Language & Region",
+      "appLanguage": "App Language",
+      "appLanguageDesc": "Select your preferred language"
+    }
+  },
+  "dashboard": {
+    "totalBalance": "Total Balance",
+    "totalIncome": "Total Income",
+    "totalExpenses": "Total Expenses",
+    "totalInvestments": "Total Investments",
+    "budget": "Budget"
+  },
+  "profile": {
+    "title": "User Profile",
+    "editProfile": "Edit Profile",
+    "fullName": "Full Name",
+    "emailAddress": "Email Address",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "saveChanges": "Save Changes"
+  }
+}

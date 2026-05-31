@@ -1,0 +1,47 @@
+{
+  "nav": {
+    "dashboard": "Tablero",
+    "transactions": "Transacciones",
+    "budgets": "Presupuestos",
+    "reports": "Reportes",
+    "settings": "Ajustes"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "appearance": {
+      "title": "Apariencia y Preferencias",
+      "theme": "Tema",
+      "themeDesc": "Alternar entre modo claro y oscuro",
+      "darkMode": "Modo Oscuro",
+      "lightMode": "Modo Claro"
+    },
+    "currency": {
+      "symbol": "Símbolo de Moneda",
+      "note": "Nota Importante: Cambiar el símbolo de moneda solo cambia cómo se muestran visualmente los valores. No realiza ninguna conversión de moneda automática en su historial de transacciones."
+    },
+    "date": {
+      "format": "Formato de Fecha"
+    },
+    "language": {
+      "title": "Idioma y Región",
+      "appLanguage": "Idioma de la App",
+      "appLanguageDesc": "Seleccione su idioma preferido"
+    }
+  },
+  "dashboard": {
+    "totalBalance": "Saldo Total",
+    "totalIncome": "Ingreso Total",
+    "totalExpenses": "Gastos Totales",
+    "totalInvestments": "Inversiones Totales",
+    "budget": "Presupuesto"
+  },
+  "profile": {
+    "title": "Perfil de Usuario",
+    "editProfile": "Editar Perfil",
+    "fullName": "Nombre Completo",
+    "emailAddress": "Correo Electrónico",
+    "currentPassword": "Contraseña Actual",
+    "newPassword": "Nueva Contraseña",
+    "saveChanges": "Guardar Cambios"
+  }
+}
