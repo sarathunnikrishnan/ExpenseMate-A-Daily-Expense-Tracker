@@ -8,7 +8,10 @@ import toast from 'react-hot-toast';
 import { Camera, User as UserIcon } from 'lucide-react';
 
 const Profile = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
+  
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -111,6 +114,19 @@ const Profile = () => {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      await api.delete('/auth/profile');
+      toast.success('Account deleted successfully');
+      logout();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete account');
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -227,6 +243,53 @@ const Profile = () => {
               {showOtpInput ? 'Verify & Save Changes' : 'Save Changes'}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Delete Account Section */}
+      <Card className="max-w-2xl mx-auto border-red-200 dark:border-red-900/30">
+        <CardHeader>
+          <CardTitle className="text-red-600 dark:text-red-400">Danger Zone</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Once you delete your account, there is no going back. All your data including transactions, accounts, and budgets will be permanently deleted. Please be certain.
+          </p>
+          
+          {!showDeleteConfirm ? (
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900/50 dark:hover:bg-red-900/20"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Delete Account
+            </Button>
+          ) : (
+            <div className="p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg">
+              <p className="text-sm font-semibold text-red-800 dark:text-red-300 mb-4">
+                Are you absolutely sure you want to delete your account?
+              </p>
+              <div className="flex gap-3">
+                <Button 
+                  type="button" 
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  isLoading={isDeleting}
+                  onClick={handleDeleteAccount}
+                >
+                  Yes, Delete My Account
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

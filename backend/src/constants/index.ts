@@ -1,3 +1,5 @@
+export const APP_NAME = 'ExpenseMate';
+
 export const CATEGORY_TYPES = ['income', 'expense', 'investment', 'saving', 'other'] as const;
 export const TRANSACTION_TYPES = ['income', 'expense', 'saving', 'other'] as const;
 export const INVESTMENT_BEHAVIORS = ['fixed', 'market'] as const;

@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { APP_NAME } from "../constants";
 
 export const sendOTP = async (
   email: string,
@@ -29,12 +30,12 @@ export const sendOTP = async (
 
     const subject =
       purpose === "signup"
-        ? "Verify your Expense Tracker Account"
+        ? `Verify your ${APP_NAME} Account`
         : "Verify your new Email Address";
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-        <h2 style="color: #4F46E5; text-align: center;">Expense Tracker</h2>
+        <h2 style="color: #4F46E5; text-align: center;">${APP_NAME}</h2>
         <p style="color: #374151; font-size: 16px;">Hello,</p>
         <p style="color: #374151; font-size: 16px;">
           ${
@@ -52,7 +53,7 @@ export const sendOTP = async (
     `;
 
     await transporter.sendMail({
-      from: `"Expense Tracker" <${process.env.SMTP_FROM}>`,
+      from: `"${APP_NAME}" <${process.env.SMTP_FROM}>`,
       to: email,
       subject,
       html,

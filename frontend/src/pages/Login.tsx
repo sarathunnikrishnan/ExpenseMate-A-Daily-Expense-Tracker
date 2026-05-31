@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { APP_NAME } from '../constants';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -52,7 +53,7 @@ const Login = () => {
           <div className="mx-auto w-full max-w-sm lg:w-96">
             <div className="mb-8 animate-slide-in-right">
               <h2 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-md">
-                ExpenseMate
+                {APP_NAME}
               </h2>
               <p className="mt-2 text-sm text-slate-200 drop-shadow">
                 Welcome back! Please enter your details to sign in.

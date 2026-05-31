@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { APP_NAME } from '../constants';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -74,7 +75,7 @@ const Register = () => {
           <div className="mx-auto w-full max-w-sm lg:w-96">
             <div className="mb-8 animate-slide-in-right py-4 mt-6">
               <h2 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-md">
-                Join ExpenseMate
+                Join {APP_NAME}
               </h2>
               <p className="mt-2 text-sm text-slate-200 drop-shadow">
                 Start tracking your expenses and take control of your financial future today.
@@ -189,7 +190,7 @@ const Register = () => {
           <div className="animate-slide-in-right [animation-delay:300ms] opacity-0 max-w-xl" style={{ animationFillMode: 'forwards' }}>
             <h3 className="text-5xl font-bold mb-4 text-white drop-shadow-lg tracking-tight">Build Your Wealth</h3>
             <p className="text-2xl text-slate-200 font-light leading-relaxed drop-shadow-md">
-              Unlock powerful insights and transform your spending habits with ExpenseMate. Your journey to financial freedom begins here.
+              Unlock powerful insights and transform your spending habits with {APP_NAME}. Your journey to financial freedom begins here.
             </p>
           </div>
         </div>

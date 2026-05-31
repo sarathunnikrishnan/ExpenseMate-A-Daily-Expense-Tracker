@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Menu, X, LayoutDashboard, Receipt, PieChart, Wallet, WalletCards, Settings, TrendingUp, Sliders, ChevronDown, ChevronUp, BarChart3, User } from 'lucide-react';
+import { APP_NAME } from '../constants';
 
 const MainLayout = () => {
   const { user, logout } = useAuth();
@@ -20,8 +21,8 @@ const MainLayout = () => {
       {/* Sidebar for Desktop */}
       <aside className="hidden w-64 overflow-y-auto border-r border-gray-200 dark:border-gray-800 bg-card-light dark:bg-card-dark md:block">
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-center h-16 border-b border-gray-200 dark:border-gray-800">
-            <h1 className="text-xl font-bold text-primary-light dark:text-primary-dark">ExpenseTracker</h1>
+          <div className="flex items-center justify-center h-16 border-b border-slate-700/50">
+            <h1 className="text-xl font-bold text-white drop-shadow-md">{APP_NAME}</h1>
           </div>
           <nav className="flex-1 px-4 py-4 space-y-2">
             <NavLink
@@ -112,6 +113,8 @@ const MainLayout = () => {
             {/* Accordion Menu */}
             <div>
               <button
+                type="button"
+                title="Toggle Configurations"
                 onClick={() => setConfigOpen(!configOpen)}
                 className="flex items-center justify-between w-full px-3 py-2 text-gray-700 transition-colors rounded-lg dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
@@ -165,6 +168,7 @@ const MainLayout = () => {
               <span className="text-sm font-medium truncate flex-1">{user?.name}</span>
             </Link>
             <button
+              type="button"
               onClick={handleLogout}
               className="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-primary-light dark:bg-primary-dark hover:opacity-90"
             >
@@ -182,8 +186,8 @@ const MainLayout = () => {
           <aside className="relative w-64 h-full bg-card-light dark:bg-card-dark">
              <div className="flex flex-col h-full">
               <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-800">
-                <h1 className="text-xl font-bold text-primary-light dark:text-primary-dark">ExpenseTracker</h1>
-                <button onClick={() => setSidebarOpen(false)}>
+                <h1 className="text-xl font-bold text-primary-light dark:text-primary-dark">{APP_NAME}</h1>
+                <button type="button" title="Close Sidebar" onClick={() => setSidebarOpen(false)}>
                   <X size={24} />
                 </button>
               </div>
@@ -281,6 +285,8 @@ const MainLayout = () => {
                 {/* Accordion Menu Mobile */}
                 <div>
                   <button
+                    type="button"
+                    title="Toggle Configurations"
                     onClick={() => setConfigOpen(!configOpen)}
                     className="flex items-center justify-between w-full px-3 py-2 text-gray-700 transition-colors rounded-lg dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
@@ -322,6 +328,7 @@ const MainLayout = () => {
                   <span className="text-sm font-medium truncate flex-1">{user?.name}</span>
                 </Link>
                 <button
+                  type="button"
                   onClick={handleLogout}
                   className="flex items-center justify-center w-full gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-primary-light dark:bg-primary-dark hover:opacity-90"
                 >
@@ -337,10 +344,10 @@ const MainLayout = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         <header className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-800 md:hidden bg-card-light dark:bg-card-dark">
-          <button onClick={() => setSidebarOpen(true)}>
+          <button type="button" title="Open Sidebar" onClick={() => setSidebarOpen(true)} className="text-white">
             <Menu size={24} />
           </button>
-          <h1 className="text-xl font-bold text-primary-light dark:text-primary-dark">ExpenseTracker</h1>
+          <h1 className="text-xl font-bold text-white drop-shadow-md">{APP_NAME}</h1>
           <div className="w-8"></div> {/* Spacer to keep title centered */}
         </header>
         <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">

@@ -12,7 +12,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey_12345') as { id: string };
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
 
       req.user = await User.findById(decoded.id).select('-password') as IUser;
       next();
