@@ -33,7 +33,17 @@ app.get("/", (req, res) => {
 const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGO_URI as string;
-    await mongoose.connect(mongoURI);
+    if (!mongoURI) {
+      console.error("ERROR: MONGO_URI environment variable is completely missing!");
+      process.exit(1);
+    }
+    
+    // Using family: 4 forces IPv4, which fixes a very common Vercel DNS resolution bug with MongoDB Atlas
+    await mongoose.connect(mongoURI, {
+      serverSelectionTimeoutMS: 10000,
+      family: 4 
+    } as mongoose.ConnectOptions);
+    
     console.log("MongoDB Connected...");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
