@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
@@ -183,7 +183,7 @@ const Reports = () => {
                         dataKey="amount"
                         label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       >
-                        {categoryData.map((entry, idx) => (
+                        {categoryData.map((_, idx) => (
                           <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
                         ))}
                       </Pie>

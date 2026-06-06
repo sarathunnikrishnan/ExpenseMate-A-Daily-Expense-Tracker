@@ -5,7 +5,7 @@ import { Category } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Trash2, Tag, Edit2, X } from 'lucide-react';
+import { Trash2, Tag, Edit2 } from 'lucide-react';
 
 const TransactionCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);

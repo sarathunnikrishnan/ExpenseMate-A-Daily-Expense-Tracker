@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Menu, X, LayoutDashboard, Receipt, PieChart, Wallet, WalletCards, Settings, TrendingUp, Sliders, ChevronDown, ChevronUp, BarChart3, User } from 'lucide-react';
