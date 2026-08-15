@@ -20,10 +20,13 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Log incoming requests for diagnostics
-app.use((req, res, next) => {
+// Log incoming requests for diagnostics & ensure DB connection on serverless
+app.use(async (req, res, next) => {
   if (req.path.startsWith("/api/") && !req.path.startsWith("/api/health")) {
     addLog("info", "API", `${req.method} ${req.path}`);
+  }
+  if (req.path.startsWith("/api/") && mongoose.connection.readyState === 0 && process.env.MONGO_URI) {
+    await connectDB();
   }
   next();
 });
@@ -44,7 +47,7 @@ app.get("/", (req, res) => {
 });
 
 // Database connection
-const connectDB = async () => {
+async function connectDB() {
   const mongoURI = process.env.MONGO_URI as string;
   if (!mongoURI) {
     addLog("error", "DATABASE", "MONGO_URI environment variable is completely missing!", "Please configure MONGO_URI in your backend .env file or Vercel Environment Variables.");
