@@ -9,9 +9,10 @@ import Transaction from "../models/Transaction";
 import Budget from "../models/Budget";
 import { deleteImage } from "../config/cloudinary";
 import { sendOTP } from "../utils/mailer";
+import { getJwtSecret } from "../middleware/authMiddleware";
 
 const generateToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET as string, {
+  return jwt.sign({ id }, getJwtSecret(), {
     expiresIn: (process.env.JWT_EXPIRES_IN || "30d") as any,
   });
 };

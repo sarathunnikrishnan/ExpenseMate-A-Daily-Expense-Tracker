@@ -1,31 +1,37 @@
 import nodemailer from "nodemailer";
 import { APP_NAME } from "../constants";
+import { addLog } from "./statusLogger";
 
 export const sendOTP = async (
   email: string,
   otp: string,
-  purpose: "signup" | "email_update",
+  purpose: "signup" | "email_update"
 ) => {
-  // const isConfigured = process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASS && process.env.SMTP_FROM;
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.SMTP_FROM || user || "no-reply@expensemate.com";
 
-  // if (!isConfigured) {
-  //   console.log('\n=============================================');
-  //   console.log(`[DEVELOPMENT MODE] OTP for ${email}`);
-  //   console.log(`Purpose: ${purpose}`);
-  //   console.log(`OTP: ${otp}`);
-  //   console.log('=============================================\n');
-  //   return;
-  // }
+  const isConfigured = Boolean(host && user && pass);
+
+  if (!isConfigured) {
+    addLog(
+      "warn",
+      "SMTP",
+      `SMTP credentials not configured. OTP for [${email}] is: ${otp}`,
+      `Purpose: ${purpose}. Set SMTP_HOST, SMTP_USER, SMTP_PASS in environment variables to send live emails.`
+    );
+    console.log(`[OTP VERIFICATION MODE] ${purpose} OTP for ${email}: ${otp}`);
+    return;
+  }
 
   try {
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
     });
 
     const subject =
@@ -53,13 +59,24 @@ export const sendOTP = async (
     `;
 
     await transporter.sendMail({
-      from: `"${APP_NAME}" <${process.env.SMTP_FROM}>`,
+      from: `"${APP_NAME}" <${from}>`,
       to: email,
       subject,
       html,
     });
-  } catch (error) {
-    console.error("Error sending email:", error);
-    throw new Error("Could not send OTP email");
+
+    addLog("success", "SMTP", `OTP email successfully sent to ${email}`);
+  } catch (error: any) {
+    const errorDetails = error?.message || String(error);
+    addLog(
+      "error",
+      "SMTP",
+      `Failed to send OTP email to ${email}`,
+      `Error: ${errorDetails}. Fallback OTP code is: ${otp}`
+    );
+    console.error(`[SMTP ERROR] Could not send email. Fallback OTP for ${email}: ${otp}`, errorDetails);
+
+    // If sending fails (e.g. wrong password or port), log fallback OTP so registration is not permanently blocked
+    addLog("warn", "SMTP", `[FALLBACK] Use OTP: ${otp} for ${email} to proceed.`);
   }
 };
