@@ -1,11 +1,33 @@
 import { Request, Response } from 'express';
 import Budget from '../models/Budget';
+import Transaction from '../models/Transaction';
 import { AuthRequest } from '../middleware/authMiddleware';
 
 export const getBudgets = async (req: AuthRequest, res: Response) => {
   try {
     const budgets = await Budget.find({ userId: req.user?._id }).sort({ year: -1, month: -1 });
-    res.json(budgets);
+
+    const budgetsWithSpent = await Promise.all(
+      budgets.map(async (b) => {
+        const startDate = new Date(b.year, b.month - 1, 1);
+        const endDate = new Date(b.year, b.month, 0, 23, 59, 59, 999);
+
+        const expenseTxs = await Transaction.find({
+          userId: req.user?._id,
+          type: 'expense',
+          date: { $gte: startDate, $lte: endDate },
+        });
+
+        const totalSpent = expenseTxs.reduce((sum, tx) => sum + tx.amount, 0);
+
+        return {
+          ...b.toObject(),
+          spentAmount: totalSpent,
+        };
+      })
+    );
+
+    res.json(budgetsWithSpent);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -20,11 +42,22 @@ export const createBudget = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'Budget for this month already exists' });
     }
 
+    const startDate = new Date(Number(year), Number(month) - 1, 1);
+    const endDate = new Date(Number(year), Number(month), 0, 23, 59, 59, 999);
+
+    const expenseTxs = await Transaction.find({
+      userId: req.user?._id,
+      type: 'expense',
+      date: { $gte: startDate, $lte: endDate },
+    });
+
+    const initialSpent = expenseTxs.reduce((sum, tx) => sum + tx.amount, 0);
+
     const budget = new Budget({
       month,
       year,
       budgetAmount,
-      spentAmount: 0,
+      spentAmount: initialSpent,
       userId: req.user?._id,
     });
 
