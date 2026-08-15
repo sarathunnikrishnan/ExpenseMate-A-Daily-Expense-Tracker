@@ -1,8 +1,16 @@
 /// <reference types="vite/client" />
 import axios from 'axios';
 
+const rawBaseURL = import.meta.env.VITE_API_URL;
+
+// Automatically ensures the base URL ends with /api even if VITE_API_URL was set without it
+const getNormalizedBaseURL = (url: string) => {
+  const trimmed = url.trim().replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: getNormalizedBaseURL(rawBaseURL),
 });
 
 // Add a request interceptor to add the token
