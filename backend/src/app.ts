@@ -1,7 +1,7 @@
 /**
  * @file app.ts
  * @description Decoupled Express application instance setup, middleware registration, API routing,
- * rate limiting, helmet security headers, mongo sanitization, and root dashboard UI configuration.
+ * rate limiting, helmet security headers, mongo sanitization, and root API health console.
  */
 
 import express from 'express';
@@ -23,7 +23,34 @@ import { authRateLimiter, apiRateLimiter } from './middleware/rateLimiter';
 
 const app = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "'unsafe-eval'",
+          'https://cdn.tailwindcss.com',
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          'https://cdnjs.cloudflare.com',
+          'https://fonts.googleapis.com',
+        ],
+        fontSrc: [
+          "'self'",
+          'https://cdnjs.cloudflare.com',
+          'https://fonts.gstatic.com',
+        ],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
+    },
+  })
+);
+
 app.use(mongoSanitize());
 
 app.use(
@@ -37,14 +64,10 @@ app.use(
 app.use(express.json());
 
 app.use(async (req, res, next) => {
-  if (req.path.startsWith('/api/') && !req.path.startsWith('/api/health')) {
+  if (req.path.startsWith('/api') && !req.path.startsWith('/api/health')) {
     addLog('info', 'API', `${req.method} ${req.path}`);
   }
-  if (
-    req.path.startsWith('/api/') &&
-    mongoose.connection.readyState === 0 &&
-    config.mongoUri
-  ) {
+  if (mongoose.connection.readyState === 0 && config.mongoUri) {
     await connectDB();
   }
   next();
@@ -60,6 +83,11 @@ app.use('/api/accounts', accountRoutes);
 app.use('/api/health', healthRoutes);
 
 app.get('/', (req, res) => {
+  res.setHeader('Content-Type', 'text/html');
+  res.send(getDashboardHtml());
+});
+
+app.get('/api', (req, res) => {
   res.setHeader('Content-Type', 'text/html');
   res.send(getDashboardHtml());
 });
