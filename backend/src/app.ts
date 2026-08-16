@@ -55,7 +55,7 @@ app.use(mongoSanitize());
 
 app.use(
   cors({
-    origin: config.clientUrl || '*',
+    origin: config.clientUrl,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
