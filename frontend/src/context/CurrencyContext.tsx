@@ -1,3 +1,8 @@
+/**
+ * @file CurrencyContext.tsx
+ * @description React Context Provider for currency formatting symbols and localized date representation preferences.
+ */
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type CurrencyContextType = {
@@ -38,7 +43,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const formatDate = (dateInput: string | Date) => {
     const d = new Date(dateInput);
     if (isNaN(d.getTime())) return '';
-    
+
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
@@ -47,17 +52,28 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const longMonth = d.toLocaleString('default', { month: 'long' });
 
     switch (dateFormat) {
-      case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
-      case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
-      case 'DD MMM, YYYY': return `${day} ${shortMonth}, ${year}`;
-      case 'MMM DD, YYYY': return `${shortMonth} ${day}, ${year}`;
-      case 'DD MMMM YYYY': return `${day} ${longMonth} ${year}`;
-      case 'MMMM DD, YYYY': return `${longMonth} ${day}, ${year}`;
-      case 'DD-MM-YYYY': return `${day}-${month}-${year}`;
-      case 'MM-DD-YYYY': return `${month}-${day}-${year}`;
-      case 'YYYY/MM/DD': return `${year}/${month}/${day}`;
-      case 'DD.MM.YYYY': return `${day}.${month}.${year}`;
-      case 'YY/MM/DD': return `${shortYear}/${month}/${day}`;
+      case 'MM/DD/YYYY':
+        return `${month}/${day}/${year}`;
+      case 'YYYY-MM-DD':
+        return `${year}-${month}-${day}`;
+      case 'DD MMM, YYYY':
+        return `${day} ${shortMonth}, ${year}`;
+      case 'MMM DD, YYYY':
+        return `${shortMonth} ${day}, ${year}`;
+      case 'DD MMMM YYYY':
+        return `${day} ${longMonth} ${year}`;
+      case 'MMMM DD, YYYY':
+        return `${longMonth} ${day}, ${year}`;
+      case 'DD-MM-YYYY':
+        return `${day}-${month}-${year}`;
+      case 'MM-DD-YYYY':
+        return `${month}-${day}-${year}`;
+      case 'YYYY/MM/DD':
+        return `${year}/${month}/${day}`;
+      case 'DD.MM.YYYY':
+        return `${day}.${month}.${year}`;
+      case 'YY/MM/DD':
+        return `${shortYear}/${month}/${day}`;
       case 'DD/MM/YYYY':
       default:
         return `${day}/${month}/${year}`;

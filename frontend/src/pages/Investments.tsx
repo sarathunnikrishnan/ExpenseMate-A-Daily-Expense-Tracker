@@ -1,160 +1,216 @@
+/**
+ * @file Investments.tsx
+ * @description Page component for tracking fixed deposits (FDs), mutual funds, and market investments portfolio.
+ */
+
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
-import { Account } from '../types';
+import { Account, Category } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Trash2, TrendingUp, PiggyBank } from 'lucide-react';
+import { ACCOUNT_MESSAGES } from '../messages';
+import {
+  ACCOUNT_TYPE_ENUM,
+  CATEGORY_TYPES_ENUM,
+  INVESTMENT_BEHAVIOR_ENUM,
+  API_ROUTES,
+} from '../constants';
+import {
+  PortfolioMetricsCards,
+  InvestmentAssetCard,
+} from '../components/investments/InvestmentCards';
 
-const Investments = () => {
+const Investments: React.FC = (): React.ReactElement => {
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [investmentTypes, setInvestmentTypes] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [investmentTypes, setInvestmentTypes] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const [name, setName] = useState('');
-  const [type, setType] = useState('FD');
-  const [initialBalance, setInitialBalance] = useState('');
-  const [interestRate, setInterestRate] = useState('');
-  const [maturityDate, setMaturityDate] = useState('');
-  
+  const [name, setName] = useState<string>('');
+  const [type, setType] = useState<string>(ACCOUNT_TYPE_ENUM.FD);
+  const [initialBalance, setInitialBalance] = useState<string>('');
+  const [interestRate, setInterestRate] = useState<string>('');
+  const [maturityDate, setMaturityDate] = useState<string>('');
+
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [newValue, setNewValue] = useState('');
-  
+  const [newValue, setNewValue] = useState<string>('');
+
   const { currency, formatDate } = useCurrency();
 
   useEffect(() => {
     fetchAccounts();
   }, []);
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = async (): Promise<void> => {
     try {
       const [accRes, catRes] = await Promise.all([
-        api.get('/accounts'),
-        api.get('/categories')
+        api.get(API_ROUTES.ACCOUNTS),
+        api.get(API_ROUTES.CATEGORIES),
       ]);
-      const invCats = catRes.data.filter((c: any) => c.type === 'investment');
+      const invCats = catRes.data.filter(
+        (c: Category) => c.type === CATEGORY_TYPES_ENUM.INVESTMENT
+      );
       setInvestmentTypes(invCats);
-      if (invCats.length > 0 && type === 'FD') setType(invCats[0].name);
+      if (invCats.length > 0 && type === ACCOUNT_TYPE_ENUM.FD) setType(invCats[0].name);
 
-      const investmentAccounts = accRes.data.filter((a: Account) => 
-        invCats.some((c: any) => c.name === a.type) || a.type === 'Investment' || a.type === 'FD'
+      const investmentAccounts = accRes.data.filter(
+        (a: Account) =>
+          invCats.some((c: Category) => c.name === a.type) ||
+          a.type === ACCOUNT_TYPE_ENUM.INVESTMENT ||
+          a.type === ACCOUNT_TYPE_ENUM.FD
       );
       setAccounts(investmentAccounts);
     } catch (error) {
-      toast.error('Failed to load investments');
+      toast.error(ACCOUNT_MESSAGES.ACCOUNTS_LOAD_FAILED);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const selectedCategory = investmentTypes.find(c => c.name === type);
-  const isFixed = selectedCategory?.investmentBehavior === 'fixed' || type === 'FD';
+  const selectedCategory = investmentTypes.find((c) => c.name === type);
+  const isFixed =
+    selectedCategory?.investmentBehavior === INVESTMENT_BEHAVIOR_ENUM.FIXED ||
+    type === ACCOUNT_TYPE_ENUM.FD;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const res = await api.post('/accounts', { 
-        name, 
-        type, 
+      const payload: any = {
+        name,
+        type,
         initialBalance: Number(initialBalance),
-        interestRate: isFixed && interestRate ? Number(interestRate) : undefined,
-        maturityDate: isFixed && maturityDate ? maturityDate : undefined
-      });
-      setAccounts([...accounts, { ...res.data, balance: Number(initialBalance) }]);
-      toast.success('Investment added');
+        currentValue: Number(initialBalance),
+      };
+      if (isFixed) {
+        if (interestRate) payload.interestRate = Number(interestRate);
+        if (maturityDate) payload.maturityDate = maturityDate;
+      }
+      const res = await api.post(API_ROUTES.ACCOUNTS, payload);
+      setAccounts([...accounts, res.data]);
+      toast.success(ACCOUNT_MESSAGES.INVESTMENT_CREATED);
       setName('');
       setInitialBalance('');
       setInterestRate('');
       setMaturityDate('');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to add investment');
+      toast.error(error.response?.data?.message || ACCOUNT_MESSAGES.ACCOUNT_ADD_FAILED);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this investment account? Ensure no transactions are linked.')) return;
+  const handleUpdateValue = async (id: string): Promise<void> => {
     try {
-      await api.delete(`/accounts/${id}`);
-      setAccounts(accounts.filter((a) => a._id !== id));
-      toast.success('Investment deleted');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to delete investment');
-    }
-  };
-
-  const handleUpdateValue = async (id: string) => {
-    if (!newValue || isNaN(Number(newValue))) return;
-    
-    try {
-      const res = await api.put(`/accounts/${id}`, { currentValue: Number(newValue) });
-      setAccounts(accounts.map(acc => acc._id === id ? { ...acc, currentValue: res.data.currentValue, balance: res.data.currentValue } : acc));
+      const val = Number(newValue);
+      const res = await api.put(`${API_ROUTES.ACCOUNTS}/${id}`, { currentValue: val });
+      setAccounts(accounts.map((a) => (a._id === id ? res.data : a)));
+      toast.success(ACCOUNT_MESSAGES.VALUE_UPDATED);
       setUpdatingId(null);
-      setNewValue('');
-      toast.success('Value updated successfully');
-    } catch (error) {
-      toast.error('Failed to update value');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || ACCOUNT_MESSAGES.VALUE_UPDATE_FAILED);
     }
   };
 
-  const getIcon = (accountType: string) => {
-    switch (accountType.toLowerCase()) {
-      case 'fd': return <PiggyBank className="text-pink-500" />;
-      case 'investment': return <TrendingUp className="text-green-500" />;
-      default: return <TrendingUp className="text-gray-500" />;
+  const handleDelete = async (id: string): Promise<void> => {
+    if (!window.confirm(ACCOUNT_MESSAGES.CONFIRM_DELETE)) return;
+    try {
+      await api.delete(`${API_ROUTES.ACCOUNTS}/${id}`);
+      setAccounts(accounts.filter((a) => a._id !== id));
+      toast.success(ACCOUNT_MESSAGES.ACCOUNT_DELETED);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || ACCOUNT_MESSAGES.ACCOUNT_DELETE_FAILED);
     }
   };
 
-  const totalInvestment = accounts.reduce((sum, acc) => sum + (acc.balance !== undefined ? acc.balance : acc.initialBalance), 0);
+  const totalInvested = accounts.reduce((acc, a) => acc + (a.initialBalance || 0), 0);
+  const totalCurrentValue = accounts.reduce(
+    (acc, a) => acc + (a.currentValue ?? a.initialBalance ?? 0),
+    0
+  );
+  const totalProfitLoss = totalCurrentValue - totalInvested;
+  const totalRoi = totalInvested > 0 ? (totalProfitLoss / totalInvested) * 100 : 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">FDs & Investments</h1>
-        <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-900 shadow-sm flex flex-col items-end">
-          <span className="text-xs uppercase font-semibold opacity-80 mb-0.5">Total Portfolio Value</span>
-          <span className="text-xl font-bold">{currency}{totalInvestment.toLocaleString('en-IN')}</span>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Investments & Assets</h1>
+          <p className="text-gray-500 text-sm">Track FDs, Mutual Funds, and Market Returns</p>
         </div>
       </div>
-      
+
+      <PortfolioMetricsCards
+        totalInvested={totalInvested}
+        totalCurrentValue={totalCurrentValue}
+        totalProfitLoss={totalProfitLoss}
+        totalRoi={totalRoi}
+        currency={currency}
+      />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1 h-fit">
           <CardHeader>
-            <CardTitle>Add New Investment</CardTitle>
+            <CardTitle>Add Asset</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <Input label="Investment Name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. SBI Fixed Deposit, Mutual Fund" />
-              
+              <Input
+                label="Asset Name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. HDFC Nifty 50"
+              />
               <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Investment Type</label>
-                <select value={type} onChange={(e) => setType(e.target.value)} className="w-full px-4 py-2 border rounded-lg bg-background-light dark:bg-background-dark border-gray-300 dark:border-gray-700">
-                  {investmentTypes.length === 0 && <option value="FD">Fixed Deposit (FD)</option>}
-                  {investmentTypes.length === 0 && <option value="Investment">Other Investment</option>}
-                  {investmentTypes.map(c => (
-                    <option key={c._id} value={c.name}>{c.name}</option>
+                <label className="block mb-1 text-sm font-medium">Asset Class</label>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className={SELECT_CLASS}
+                >
+                  {investmentTypes.map((cat) => (
+                    <option key={cat._id} value={cat.name}>
+                      {cat.name}
+                    </option>
                   ))}
+                  <option value={ACCOUNT_TYPE_ENUM.FD}>Fixed Deposit (FD)</option>
+                  <option value={ACCOUNT_TYPE_ENUM.INVESTMENT}>Other Investment</option>
                 </select>
               </div>
-
-              <Input label={`Amount Invested (${currency})`} type="number" required step="0.01" value={initialBalance} onChange={(e) => setInitialBalance(e.target.value)} placeholder="0.00" />
-              
+              <Input
+                label={`Invested Amount (${currency})`}
+                type="number"
+                required
+                min="1"
+                value={initialBalance}
+                onChange={(e) => setInitialBalance(e.target.value)}
+                placeholder="50000"
+              />
               {isFixed && (
-                <div className="grid grid-cols-2 gap-4">
-                  <Input label="Interest Rate (%)" type="number" step="0.01" value={interestRate} onChange={(e) => setInterestRate(e.target.value)} placeholder="7.5" />
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Maturity Date</label>
-                    <input type="date" value={maturityDate} onChange={(e) => setMaturityDate(e.target.value)} className="w-full px-4 py-2 border rounded-lg bg-background-light dark:bg-background-dark border-gray-300 dark:border-gray-700" />
-                  </div>
-                </div>
+                <>
+                  <Input
+                    label="Interest Rate (%)"
+                    type="number"
+                    step="0.1"
+                    value={interestRate}
+                    onChange={(e) => setInterestRate(e.target.value)}
+                    placeholder="7.5"
+                  />
+                  <Input
+                    label="Maturity Date"
+                    type="date"
+                    value={maturityDate}
+                    onChange={(e) => setMaturityDate(e.target.value)}
+                  />
+                </>
               )}
-
-              <Button type="submit" className="w-full" isLoading={isSubmitting}>Add Investment</Button>
+              <Button type="submit" className="w-full" isLoading={isSubmitting}>
+                Add Asset
+              </Button>
             </form>
           </CardContent>
         </Card>
@@ -164,95 +220,27 @@ const Investments = () => {
             <CardTitle>Your Portfolio</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? <p>Loading...</p> : accounts.length === 0 ? <p className="text-gray-500">No investments found.</p> : (
+            {isLoading ? (
+              <p>Loading...</p>
+            ) : accounts.length === 0 ? (
+              <p className="text-gray-500">No investment accounts added.</p>
+            ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {accounts.map((acc) => {
-                  const currentValue = acc.balance !== undefined ? acc.balance : acc.initialBalance;
-                  const profitLoss = currentValue - acc.initialBalance;
-                  const roi = acc.initialBalance > 0 ? (profitLoss / acc.initialBalance) * 100 : 0;
-                  const isProfit = profitLoss >= 0;
-                  
-                  const cat = investmentTypes.find(c => c.name === acc.type);
-                  const isAccFixed = cat?.investmentBehavior === 'fixed' || acc.type === 'FD';
-                  const isAccMarket = cat?.investmentBehavior === 'market' || acc.type === 'Investment';
-
-                  return (
-                    <div key={acc._id} className="flex flex-col p-5 border rounded-xl dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm" style={cat ? { color: cat.color } : {}}>
-                            {getIcon(acc.type)}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-lg">{acc.name}</h4>
-                            <span className="text-xs text-gray-500 uppercase">{acc.type}</span>
-                          </div>
-                        </div>
-                        <button onClick={() => handleDelete(acc._id)} className="text-gray-400 hover:text-red-500 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-
-                      {isAccFixed && (acc.interestRate || acc.maturityDate) && (
-                        <div className="flex gap-4 mb-4 pb-4 border-b border-gray-200 dark:border-gray-800 text-sm">
-                          {acc.interestRate && (
-                            <div>
-                              <p className="text-gray-500 text-xs">Interest Rate</p>
-                              <p className="font-medium text-green-600 dark:text-green-400">{acc.interestRate}%</p>
-                            </div>
-                          )}
-                          {acc.maturityDate && (
-                            <div>
-                              <p className="text-gray-500 text-xs">Maturity Date</p>
-                              <p className="font-medium">{formatDate(acc.maturityDate)}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="mt-auto">
-                        <p className="text-sm text-gray-500 mb-1">Current Value</p>
-                        
-                        {updatingId === acc._id ? (
-                          <div className="flex items-center gap-2 mb-2">
-                            <input 
-                              type="number" 
-                              className="w-full px-2 py-1 border rounded bg-white dark:bg-gray-800 text-sm" 
-                              value={newValue} 
-                              onChange={e => setNewValue(e.target.value)} 
-                              placeholder="New Value"
-                              autoFocus
-                            />
-                            <button onClick={() => handleUpdateValue(acc._id)} className="px-3 py-1 bg-primary-light dark:bg-primary-dark text-white rounded text-sm font-medium">Save</button>
-                            <button onClick={() => setUpdatingId(null)} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded text-sm font-medium">Cancel</button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-3 mb-1">
-                            <h3 className="text-2xl font-bold">
-                              {currency}{currentValue.toLocaleString('en-IN')}
-                            </h3>
-                            {isAccMarket && (
-                              <button onClick={() => { setUpdatingId(acc._id); setNewValue(currentValue.toString()); }} className="text-xs font-semibold text-primary-light dark:text-primary-dark hover:underline bg-primary-light/10 dark:bg-primary-dark/10 px-2 py-1 rounded">
-                                Update
-                              </button>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="flex justify-between items-end mt-2">
-                          <p className="text-xs text-gray-500">Invested: {currency}{acc.initialBalance.toLocaleString('en-IN')}</p>
-                          
-                          {isAccMarket && (
-                            <div className={`text-xs font-semibold px-2 py-1 rounded-full ${isProfit ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-                              {isProfit ? '+' : ''}{roi.toFixed(1)}% 
-                              ({isProfit ? '+' : ''}{currency}{Math.abs(profitLoss).toLocaleString('en-IN')})
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {accounts.map((acc) => (
+                  <InvestmentAssetCard
+                    key={acc._id}
+                    acc={acc}
+                    investmentTypes={investmentTypes}
+                    updatingId={updatingId}
+                    newValue={newValue}
+                    currency={currency}
+                    formatDate={formatDate}
+                    setNewValue={setNewValue}
+                    setUpdatingId={setUpdatingId}
+                    onUpdateValue={handleUpdateValue}
+                    onDelete={handleDelete}
+                  />
+                ))}
               </div>
             )}
           </CardContent>
@@ -261,5 +249,11 @@ const Investments = () => {
     </div>
   );
 };
+
+const SELECT_CLASS = [
+  'w-full px-4 py-2 border rounded-lg',
+  'bg-background-light dark:bg-background-dark',
+  'border-gray-300 dark:border-gray-700',
+].join(' ');
 
 export default Investments;

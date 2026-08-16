@@ -1,14 +1,17 @@
+/**
+ * @file cloudinary.ts
+ * @description Cloudinary storage and media upload/deletion configuration for user profile photos.
+ */
+
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { config } from './env.config';
 
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.CLOUD_API_KEY,
-  api_secret: process.env.CLOUD_API_SECRET,
+  cloud_name: config.cloudinary.cloudName || process.env.CLOUD_NAME,
+  api_key: config.cloudinary.apiKey || process.env.CLOUD_API_KEY,
+  api_secret: config.cloudinary.apiSecret || process.env.CLOUD_API_SECRET,
 });
 
 const storage = new CloudinaryStorage({
@@ -21,28 +24,27 @@ const storage = new CloudinaryStorage({
 
 export const upload = multer({ storage });
 
-export const extractPublicId = (url: string) => {
+export const extractPublicId = (url: string): string | null => {
   try {
-    // Cloudinary URLs typically look like: https://res.cloudinary.com/<cloud_name>/image/upload/v1234567890/<folder>/<public_id>.<ext>
     const splitUrl = url.split('/');
-    const lastPart = splitUrl[splitUrl.length - 1]; // <public_id>.<ext>
-    const folderPart = splitUrl[splitUrl.length - 2]; // <folder>
+    const lastPart = splitUrl[splitUrl.length - 1];
+    const folderPart = splitUrl[splitUrl.length - 2];
     const publicIdWithExt = `${folderPart}/${lastPart}`;
-    const publicId = publicIdWithExt.split('.')[0]; // remove extension
-    return publicId;
+    return publicIdWithExt.split('.')[0];
   } catch (error) {
-    console.error('Error extracting public ID from URL', error);
     return null;
   }
 };
 
-export const deleteImage = async (url: string) => {
+export const deleteImage = async (url: string): Promise<void> => {
   const publicId = extractPublicId(url);
   if (publicId) {
     try {
       await cloudinary.uploader.destroy(publicId);
     } catch (error) {
-      console.error('Error deleting image from Cloudinary', error);
+      // Intentionally handled error for missing image
     }
   }
 };
+
+export default upload;

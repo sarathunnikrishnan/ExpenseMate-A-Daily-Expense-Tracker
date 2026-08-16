@@ -1,24 +1,29 @@
-import nodemailer from "nodemailer";
-import { APP_NAME } from "../constants";
-import { addLog } from "./statusLogger";
+/**
+ * @file mailer.ts
+ * @description Email dispatch utility for sending OTP emails during registration and profile updates.
+ */
+
+import nodemailer from 'nodemailer';
+import { APP_NAME } from '../constants';
+import { addLog } from './statusLogger';
 
 export const sendOTP = async (
   email: string,
   otp: string,
-  purpose: "signup" | "email_update"
-) => {
+  purpose: 'signup' | 'email_update'
+): Promise<void> => {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT) || 587;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || user || "no-reply@expensemate.com";
+  const from = process.env.SMTP_FROM || user || 'no-reply@expensemate.com';
 
   const isConfigured = Boolean(host && user && pass);
 
   if (!isConfigured) {
     addLog(
-      "warn",
-      "SMTP",
+      'warn',
+      'SMTP',
       `SMTP credentials not configured. OTP for [${email}] is: ${otp}`,
       `Purpose: ${purpose}. Set SMTP_HOST, SMTP_USER, SMTP_PASS in environment variables to send live emails.`
     );
@@ -35,9 +40,9 @@ export const sendOTP = async (
     });
 
     const subject =
-      purpose === "signup"
+      purpose === 'signup'
         ? `Verify your ${APP_NAME} Account`
-        : "Verify your new Email Address";
+        : 'Verify your new Email Address';
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -45,9 +50,9 @@ export const sendOTP = async (
         <p style="color: #374151; font-size: 16px;">Hello,</p>
         <p style="color: #374151; font-size: 16px;">
           ${
-            purpose === "signup"
-              ? "Thank you for signing up! Please use the following One-Time Password (OTP) to verify your account."
-              : "You requested to update your email address. Please use the following One-Time Password (OTP) to confirm this change."
+            purpose === 'signup'
+              ? 'Thank you for signing up! Please use the following One-Time Password (OTP) to verify your account.'
+              : 'You requested to update your email address. Please use the following One-Time Password (OTP) to confirm this change.'
           }
         </p>
         <div style="background-color: #F3F4F6; padding: 16px; text-align: center; border-radius: 4px; margin: 24px 0;">
@@ -65,18 +70,16 @@ export const sendOTP = async (
       html,
     });
 
-    addLog("success", "SMTP", `OTP email successfully sent to ${email}`);
+    addLog('success', 'SMTP', `OTP email successfully sent to ${email}`);
   } catch (error: any) {
     const errorDetails = error?.message || String(error);
     addLog(
-      "error",
-      "SMTP",
+      'error',
+      'SMTP',
       `Failed to send OTP email to ${email}`,
       `Error: ${errorDetails}. Fallback OTP code is: ${otp}`
     );
     console.error(`[SMTP ERROR] Could not send email. Fallback OTP for ${email}: ${otp}`, errorDetails);
-
-    // If sending fails (e.g. wrong password or port), log fallback OTP so registration is not permanently blocked
-    addLog("warn", "SMTP", `[FALLBACK] Use OTP: ${otp} for ${email} to proceed.`);
+    addLog('warn', 'SMTP', `[FALLBACK] Use OTP: ${otp} for ${email} to proceed.`);
   }
 };

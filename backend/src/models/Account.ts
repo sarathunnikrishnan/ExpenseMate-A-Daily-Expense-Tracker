@@ -1,3 +1,8 @@
+/**
+ * @file Account.ts
+ * @description Mongoose schema and TypeScript interface for Account entity.
+ */
+
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IAccount extends Document {
@@ -13,7 +18,7 @@ export interface IAccount extends Document {
 const accountSchema = new Schema<IAccount>(
   {
     name: { type: String, required: true },
-    type: { type: String, required: true, default: 'Bank' }, // e.g. Cash, Bank, Wallet, FD, Investment
+    type: { type: String, required: true, default: 'Bank' },
     initialBalance: { type: Number, default: 0 },
     interestRate: { type: Number },
     maturityDate: { type: Date },

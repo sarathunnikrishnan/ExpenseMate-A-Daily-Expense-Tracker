@@ -1,3 +1,8 @@
+/**
+ * @file Budget.ts
+ * @description Mongoose schema and TypeScript interface for Budget entity.
+ */
+
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IBudget extends Document {

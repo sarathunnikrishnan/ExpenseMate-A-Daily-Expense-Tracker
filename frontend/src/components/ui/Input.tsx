@@ -1,3 +1,8 @@
+/**
+ * @file Input.tsx
+ * @description Reusable form input component with labels, error indicators, and password visibility toggles.
+ */
+
 import React, { forwardRef, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -12,6 +17,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const [showPassword, setShowPassword] = useState(false);
     const isPasswordType = props.type === 'password';
     const currentType = isPasswordType && showPassword ? 'text' : props.type;
+
+    const btnClasses =
+      'absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 ' +
+      'hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200';
 
     return (
       <div className="w-full">
@@ -36,7 +45,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           {isPasswordType && (
             <button
               type="button"
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className={btnClasses}
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}

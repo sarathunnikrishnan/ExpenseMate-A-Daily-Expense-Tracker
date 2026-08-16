@@ -1,8 +1,30 @@
+/**
+ * @file index.ts
+ * @description Centralized TypeScript interfaces and type definitions for ExpenseMate frontend application.
+ */
+
+import {
+  INVESTMENT_BEHAVIOR_ENUM,
+  CATEGORY_TYPES_ENUM,
+  TRANSACTION_TYPES_ENUM,
+} from '../constants';
+
+export type InvestmentBehavior =
+  (typeof INVESTMENT_BEHAVIOR_ENUM)[keyof typeof INVESTMENT_BEHAVIOR_ENUM];
+
+export type CategoryType =
+  (typeof CATEGORY_TYPES_ENUM)[keyof typeof CATEGORY_TYPES_ENUM];
+
+export type TransactionType =
+  (typeof TRANSACTION_TYPES_ENUM)[keyof typeof TRANSACTION_TYPES_ENUM];
+
+export type ThemePreference = 'light' | 'dark';
+
 export interface User {
   _id: string;
   name: string;
   email: string;
-  themePreference: 'light' | 'dark';
+  themePreference: ThemePreference;
   profilePhoto?: string;
   reportWidgetOrder?: string[];
   token?: string;
@@ -13,8 +35,8 @@ export interface Category {
   name: string;
   icon: string;
   color: string;
-  type: 'income' | 'expense' | 'investment' | 'saving' | 'other';
-  investmentBehavior?: 'fixed' | 'market';
+  type: CategoryType;
+  investmentBehavior?: InvestmentBehavior;
   userId: string;
   isDefault?: boolean;
 }
@@ -24,7 +46,7 @@ export interface Account {
   name: string;
   type: string;
   initialBalance: number;
-  balance?: number; // Calculated balance from backend
+  balance?: number;
   interestRate?: number;
   maturityDate?: string;
   currentValue?: number;
@@ -35,8 +57,8 @@ export interface Transaction {
   _id: string;
   title: string;
   amount: number;
-  type: 'income' | 'expense' | 'saving' | 'other';
-  categoryId: Category; // Populated from backend
+  type: TransactionType;
+  categoryId: Category;
   accountId: Account;
   notes?: string;
   date: string;
@@ -50,4 +72,23 @@ export interface Budget {
   budgetAmount: number;
   spentAmount: number;
   userId: string;
+}
+
+export interface MonthlyReportData {
+  totalIncome: number;
+  totalExpense: number;
+  savings: number;
+  budget: number;
+  transactions: Transaction[];
+}
+
+export interface YearlyReportItem {
+  month: number;
+  income: number;
+  expense: number;
+}
+
+export interface CategoryReportItem {
+  name: string;
+  amount: number;
 }

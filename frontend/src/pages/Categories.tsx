@@ -1,3 +1,8 @@
+/**
+ * @file Categories.tsx
+ * @description Page component for managing income and expense transaction categories.
+ */
+
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -12,9 +17,8 @@ const Categories = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form state
   const [name, setName] = useState('');
-  const [icon, setIcon] = useState('tag'); // default icon
+  const [icon, setIcon] = useState('tag');
   const [color, setColor] = useState('#4F46E5');
   const [type, setType] = useState<'income' | 'expense'>('expense');
 
@@ -40,7 +44,7 @@ const Categories = () => {
       const res = await api.post('/categories', { name, icon, color, type });
       setCategories([...categories, res.data]);
       toast.success('Category added successfully');
-      setName(''); // reset form
+      setName('');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to add category');
     } finally {
@@ -62,7 +66,7 @@ const Categories = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Categories</h1>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1 h-fit">
           <CardHeader>
@@ -78,7 +82,9 @@ const Categories = () => {
                 placeholder="e.g. Groceries"
               />
               <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+                <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Type
+                </label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as 'income' | 'expense')}
@@ -98,7 +104,9 @@ const Categories = () => {
                   />
                 </div>
                 <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Color</label>
+                  <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Color
+                  </label>
                   <input
                     type="color"
                     value={color}
@@ -126,16 +134,15 @@ const Categories = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {categories.map((category) => (
-                  <div 
-                    key={category._id} 
+                  <div
+                    key={category._id}
                     className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50"
                   >
                     <div className="flex items-center gap-3">
-                      <div 
+                      <div
                         className="w-10 h-10 rounded-full flex items-center justify-center opacity-80"
                         style={{ backgroundColor: `${category.color}20`, color: category.color }}
                       >
-                        {/* Placeholder for icon, using first letter instead */}
                         <span className="font-bold">{category.name.charAt(0)}</span>
                       </div>
                       <div>
@@ -144,7 +151,7 @@ const Categories = () => {
                       </div>
                     </div>
                     {!category.isDefault && (
-                      <button 
+                      <button
                         onClick={() => handleDelete(category._id)}
                         className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                         title="Delete category"
