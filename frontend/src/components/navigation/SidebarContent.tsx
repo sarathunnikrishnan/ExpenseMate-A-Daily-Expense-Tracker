@@ -137,7 +137,7 @@ export const SidebarNavItems: React.FC<SidebarNavProps> = ({
       </div>
 
       <NavLink
-        to="/settings"
+        to={APP_ROUTES.SETTINGS}
         onClick={onLinkClick}
         className={({ isActive }) => getNavLinkClass(isActive)}
       >

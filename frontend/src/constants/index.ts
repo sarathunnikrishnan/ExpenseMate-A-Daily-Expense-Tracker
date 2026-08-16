@@ -36,8 +36,10 @@ export const APP_ROUTES = {
   ACCOUNTS: '/accounts',
   CATEGORIES: '/categories',
   INVESTMENT_TYPES: '/categories/investment-types',
+  INVESTMENT_TYPES_ALIAS: '/investment-types',
   INVESTMENTS: '/investments',
   PROFILE: '/profile',
+  SETTINGS: '/settings',
 } as const;
 
 export const FORM_DATA_KEYS = {
