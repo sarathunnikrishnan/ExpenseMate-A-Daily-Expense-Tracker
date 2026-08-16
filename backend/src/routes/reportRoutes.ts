@@ -1,11 +1,18 @@
+/**
+ * @file reportRoutes.ts
+ * @description API routes for fetching monthly, yearly, and category analytics reports.
+ */
+
 import express from 'express';
 import { getMonthlyReport, getYearlyReport, getCategoryReport } from '../controllers/reportController';
 import { protect } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
-router.get('/monthly', protect as any, getMonthlyReport as any);
-router.get('/yearly', protect as any, getYearlyReport as any);
-router.get('/category', protect as any, getCategoryReport as any);
+router.use(protect);
+
+router.get('/monthly', getMonthlyReport);
+router.get('/yearly', getYearlyReport);
+router.get('/category', getCategoryReport);
 
 export default router;

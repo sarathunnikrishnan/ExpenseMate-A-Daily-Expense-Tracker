@@ -1,3 +1,8 @@
+/**
+ * @file Transaction.ts
+ * @description Mongoose schema and TypeScript interface for Transaction entity.
+ */
+
 import mongoose, { Document, Schema } from 'mongoose';
 import { TRANSACTION_TYPES } from '../constants';
 

@@ -1,3 +1,8 @@
+/**
+ * @file LanguageContext.tsx
+ * @description React Context Provider for managing application internationalization (i18n) language state.
+ */
+
 import React, { createContext, useContext, useState } from 'react';
 import i18n from '../i18n';
 

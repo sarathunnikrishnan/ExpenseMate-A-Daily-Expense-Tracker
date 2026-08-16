@@ -1,4 +1,27 @@
+/**
+ * @file index.ts
+ * @description Domain constants, default categories, and rate limit thresholds for ExpenseMate backend.
+ */
+
 export const APP_NAME = 'ExpenseMate';
+
+export const RATE_LIMIT_CONSTANTS = {
+  WINDOW_MS: 15 * 60 * 1000,
+  AUTH_MAX_ATTEMPTS: 10,
+  API_MAX_ATTEMPTS: 100,
+} as const;
+
+export const OTP_PURPOSE = {
+  SIGNUP: 'signup',
+  EMAIL_UPDATE: 'email_update',
+} as const;
+
+export const ACCOUNT_TYPE_ENUM = {
+  BANK: 'Bank',
+  CASH: 'Cash',
+  INVESTMENT: 'Investment',
+  FD: 'FD',
+} as const;
 
 export const CATEGORY_TYPES = ['income', 'expense', 'investment', 'saving', 'other'] as const;
 export const TRANSACTION_TYPES = ['income', 'expense', 'saving', 'other'] as const;

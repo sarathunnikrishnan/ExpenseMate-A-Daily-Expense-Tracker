@@ -1,328 +1,173 @@
-import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import User from "../models/User";
-import Category from "../models/Category";
-import OTP from "../models/OTP";
-import Account from "../models/Account";
-import Transaction from "../models/Transaction";
-import Budget from "../models/Budget";
-import { deleteImage } from "../config/cloudinary";
-import { sendOTP } from "../utils/mailer";
-import { getJwtSecret } from "../middleware/authMiddleware";
+/**
+ * @file authController.ts
+ * @description Controller endpoints for user authentication, OTP verification, profile management, and account deletion.
+ * Delegates business operations to AuthService and UserService.
+ */
 
-const generateToken = (id: string) => {
-  return jwt.sign({ id }, getJwtSecret(), {
-    expiresIn: (process.env.JWT_EXPIRES_IN || "30d") as any,
-  });
-};
+import { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
+import { authService, userService } from '../services';
+import { AuthRequest } from '../types';
+import { AUTH_MESSAGES } from '../messages';
+import { OTP_PURPOSE } from '../constants';
 
-export const sendSignupOtp = async (req: Request, res: Response) => {
+export const sendSignupOtp = async (req: Request, res: Response): Promise<Response | void> => {
   const { email } = req.body;
   try {
-    const userExists = await User.findOne({ email });
+    const userExists = await userService.findByEmail(email);
     if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ message: AUTH_MESSAGES.USER_EXISTS });
     }
-
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    await OTP.deleteMany({ email, type: "signup" }); // Clear old OTPs
-    await OTP.create({ email, otp: otpCode, type: "signup" });
-
-    await sendOTP(email, otpCode, "signup");
-    res.status(200).json({ message: "OTP sent successfully" });
+    await authService.sendSignupOtp(email);
+    res.status(200).json({ message: AUTH_MESSAGES.OTP_SENT_SUCCESS });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const registerUser = async (req: Request, res: Response) => {
+export const registerUser = async (req: Request, res: Response): Promise<Response | void> => {
   const { name, email, password, otp } = req.body;
-
   try {
-    if (!otp) {
-      return res.status(400).json({ message: "OTP is required" });
-    }
+    if (!otp) return res.status(400).json({ message: AUTH_MESSAGES.OTP_REQUIRED });
 
-    const validOtp = await OTP.findOne({ email, otp, type: "signup" });
-    if (!validOtp) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
-    }
+    const validOtp = await authService.verifyOtp(email, otp, OTP_PURPOSE.SIGNUP);
+    if (!validOtp) return res.status(400).json({ message: AUTH_MESSAGES.INVALID_OR_EXPIRED_OTP });
 
-    const userExists = await User.findOne({ email });
+    const userExists = await userService.findByEmail(email);
+    if (userExists) return res.status(400).json({ message: AUTH_MESSAGES.USER_EXISTS });
 
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-    });
+    const hashedPassword = await authService.hashPassword(password);
+    const user = await userService.create({ name, email, password: hashedPassword });
 
     if (user) {
-      // Create default categories for the new user
-      const defaultCategories = [
-        {
-          name: "Food",
-          icon: "utensils",
-          color: "#EF4444",
-          type: "expense",
-          userId: user._id,
-          isDefault: true,
-        },
-        {
-          name: "Travel",
-          icon: "plane",
-          color: "#3B82F6",
-          type: "expense",
-          userId: user._id,
-          isDefault: true,
-        },
-        {
-          name: "Shopping",
-          icon: "shopping-bag",
-          color: "#8B5CF6",
-          type: "expense",
-          userId: user._id,
-          isDefault: true,
-        },
-        {
-          name: "Bills",
-          icon: "file-text",
-          color: "#F59E0B",
-          type: "expense",
-          userId: user._id,
-          isDefault: true,
-        },
-        {
-          name: "Entertainment",
-          icon: "film",
-          color: "#EC4899",
-          type: "expense",
-          userId: user._id,
-          isDefault: true,
-        },
-        {
-          name: "Health",
-          icon: "heart",
-          color: "#10B981",
-          type: "expense",
-          userId: user._id,
-          isDefault: true,
-        },
-        {
-          name: "Salary",
-          icon: "dollar-sign",
-          color: "#10B981",
-          type: "income",
-          userId: user._id,
-          isDefault: true,
-        },
-        {
-          name: "Others",
-          icon: "more-horizontal",
-          color: "#6B7280",
-          type: "expense",
-          userId: user._id,
-          isDefault: true,
-        },
-      ];
-      await Category.insertMany(defaultCategories);
+      await authService.createDefaultCategories(user._id);
+      await authService.clearOtps(email, OTP_PURPOSE.SIGNUP);
 
-      await OTP.deleteMany({ email, type: "signup" }); // Cleanup
-
-      res.status(201).json({
+      return res.status(201).json({
         _id: user._id,
         name: user.name,
         email: user.email,
         themePreference: user.themePreference,
         profilePhoto: user.profilePhoto,
         reportWidgetOrder: user.reportWidgetOrder,
-        token: generateToken(user._id as unknown as string),
+        token: authService.generateToken(user._id as unknown as string),
       });
-    } else {
-      res.status(400).json({ message: "Invalid user data" });
     }
+    res.status(400).json({ message: AUTH_MESSAGES.INVALID_USER_DATA });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const loginUser = async (req: Request, res: Response) => {
+export const loginUser = async (req: Request, res: Response): Promise<Response | void> => {
   const { email, password } = req.body;
-
   try {
-    const user = await User.findOne({ email });
-
+    const user = await userService.findByEmail(email);
     if (user && (await bcrypt.compare(password, user.password as string))) {
-      res.json({
+      return res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         themePreference: user.themePreference,
         profilePhoto: user.profilePhoto,
         reportWidgetOrder: user.reportWidgetOrder,
-        token: generateToken(user._id as unknown as string),
+        token: authService.generateToken(user._id as unknown as string),
       });
-    } else {
-      res.status(401).json({ message: "Invalid email or password" });
     }
+    res.status(401).json({ message: AUTH_MESSAGES.INVALID_CREDENTIALS });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const getUserProfile = async (req: Request, res: Response) => {
+export const getUserProfile = async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
-    // req.user is set in authMiddleware
-    const user = await User.findById((req as any).user._id).select("-password");
+    const user = await userService.findById(req.user?._id);
     if (user) {
-      res.json(user);
-    } else {
-      res.status(404).json({ message: "User not found" });
+      const userObj = user.toObject();
+      delete (userObj as any).password;
+      return res.json(userObj);
     }
+    res.status(404).json({ message: AUTH_MESSAGES.USER_NOT_FOUND });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const sendEmailUpdateOtp = async (req: Request, res: Response) => {
+export const sendEmailUpdateOtp = async (req: Request, res: Response): Promise<Response | void> => {
   const { newEmail } = req.body;
   try {
-    const userExists = await User.findOne({ email: newEmail });
+    const userExists = await userService.findByEmail(newEmail);
     if (userExists) {
-      return res
-        .status(400)
-        .json({ message: "Email is already in use by another account" });
+      return res.status(400).json({ message: AUTH_MESSAGES.EMAIL_IN_USE });
     }
-
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    await OTP.deleteMany({ email: newEmail, type: "email_update" });
-    await OTP.create({ email: newEmail, otp: otpCode, type: "email_update" });
-
-    await sendOTP(newEmail, otpCode, "email_update");
-    res.status(200).json({ message: "OTP sent to new email" });
+    await authService.sendSignupOtp(newEmail);
+    res.status(200).json({ message: AUTH_MESSAGES.OTP_SENT_NEW_EMAIL });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const updateUserProfile = async (req: Request, res: Response) => {
+export const updateUserProfile = async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
-    const user = await User.findById((req as any).user._id);
+    const user = await userService.findById(req.user?._id);
+    if (!user) return res.status(404).json({ message: AUTH_MESSAGES.USER_NOT_FOUND });
 
-    if (user) {
-      user.name = req.body.name || user.name;
+    user.name = req.body.name || user.name;
 
-      if (req.body.email && req.body.email !== user.email) {
-        if (!req.body.otp) {
-          return res
-            .status(400)
-            .json({ message: "OTP is required to change email" });
-        }
-        const validOtp = await OTP.findOne({
-          email: req.body.email,
-          otp: req.body.otp,
-          type: "email_update",
-        });
-        if (!validOtp) {
-          return res
-            .status(400)
-            .json({ message: "Invalid or expired OTP for email update" });
-        }
-        user.email = req.body.email;
-        await OTP.deleteMany({ email: req.body.email, type: "email_update" });
-      }
-
-      if (req.body.password) {
-        if (!req.body.oldPassword) {
-          return res.status(400).json({
-            message: "Please provide your current password to set a new one.",
-          });
-        }
-
-        const isMatch = await bcrypt.compare(
-          req.body.oldPassword,
-          user.password as string,
-        );
-        if (!isMatch) {
-          return res.status(400).json({ message: "Incorrect old password." });
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(req.body.password, salt);
-      }
-
-      if (
-        req.body.reportWidgetOrder &&
-        Array.isArray(req.body.reportWidgetOrder)
-      ) {
-        user.reportWidgetOrder = req.body.reportWidgetOrder;
-      }
-
-      if (req.file) {
-        if (user.profilePhoto) {
-          await deleteImage(user.profilePhoto);
-        }
-        user.profilePhoto = (req.file as any).path;
-      } else if (req.body.removeProfilePhoto === "true") {
-        if (user.profilePhoto) {
-          await deleteImage(user.profilePhoto);
-        }
-        user.profilePhoto = "";
-      }
-
-      const updatedUser = await user.save();
-
-      res.json({
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        themePreference: updatedUser.themePreference,
-        profilePhoto: updatedUser.profilePhoto,
-        reportWidgetOrder: updatedUser.reportWidgetOrder,
-        token: generateToken(updatedUser._id as unknown as string),
-      });
-    } else {
-      res.status(404).json({ message: "User not found" });
+    if (req.body.email && req.body.email !== user.email) {
+      if (!req.body.otp) return res.status(400).json({ message: AUTH_MESSAGES.OTP_REQUIRED_FOR_EMAIL_CHANGE });
+      const valid = await authService.verifyOtp(req.body.email, req.body.otp, OTP_PURPOSE.EMAIL_UPDATE);
+      if (!valid) return res.status(400).json({ message: AUTH_MESSAGES.INVALID_OR_EXPIRED_EMAIL_OTP });
+      user.email = req.body.email;
+      await authService.clearOtps(req.body.email, OTP_PURPOSE.EMAIL_UPDATE);
     }
+
+    if (req.body.password) {
+      if (!req.body.oldPassword) return res.status(400).json({ message: AUTH_MESSAGES.CURRENT_PASSWORD_REQUIRED });
+      const isMatch = await bcrypt.compare(req.body.oldPassword, user.password as string);
+      if (!isMatch) return res.status(400).json({ message: AUTH_MESSAGES.INCORRECT_OLD_PASSWORD });
+      user.password = await authService.hashPassword(req.body.password);
+    }
+
+    if (req.body.reportWidgetOrder && Array.isArray(req.body.reportWidgetOrder)) {
+      user.reportWidgetOrder = req.body.reportWidgetOrder;
+    }
+
+    if (req.file) {
+      if (user.profilePhoto) await userService.removeProfilePhoto(user.profilePhoto);
+      user.profilePhoto = (req.file as any).path;
+    } else if (req.body.removeProfilePhoto === 'true') {
+      if (user.profilePhoto) await userService.removeProfilePhoto(user.profilePhoto);
+      user.profilePhoto = '';
+    }
+
+    const updatedUser = await user.save();
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      themePreference: updatedUser.themePreference,
+      profilePhoto: updatedUser.profilePhoto,
+      reportWidgetOrder: updatedUser.reportWidgetOrder,
+      token: authService.generateToken(updatedUser._id as unknown as string),
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const deleteUserProfile = async (req: Request, res: Response) => {
+export const deleteUserProfile = async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
-    const userId = (req as any).user._id;
-    const user = await User.findById(userId);
+    const userId = req.user?._id;
+    const user = await userService.findById(userId);
+    if (!user) return res.status(404).json({ message: AUTH_MESSAGES.USER_NOT_FOUND });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    await userService.deleteUserData(userId, user.email);
+    if (user.profilePhoto) await userService.removeProfilePhoto(user.profilePhoto);
+    await userService.deleteById(userId);
 
-    // Delete associated data
-    await Promise.all([
-      Category.deleteMany({ userId }),
-      Account.deleteMany({ userId }),
-      Transaction.deleteMany({ userId }),
-      Budget.deleteMany({ userId }),
-      OTP.deleteMany({ email: user.email }),
-    ]);
-
-    if (user.profilePhoto) {
-      await deleteImage(user.profilePhoto);
-    }
-
-    await User.findByIdAndDelete(userId);
-
-    res.status(200).json({ message: "User deleted successfully" });
+    res.status(200).json({ message: AUTH_MESSAGES.USER_DELETED_SUCCESS });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

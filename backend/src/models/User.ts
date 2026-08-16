@@ -1,3 +1,8 @@
+/**
+ * @file User.ts
+ * @description Mongoose schema and TypeScript interface for User entity.
+ */
+
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IUser extends Document {
@@ -17,9 +22,16 @@ const userSchema = new Schema<IUser>(
     password: { type: String, required: true },
     themePreference: { type: String, enum: ['light', 'dark'], default: 'dark' },
     profilePhoto: { type: String, default: '' },
-    reportWidgetOrder: { 
-      type: [String], 
-      default: ['summaryCards', 'expensePieChart', 'incomeExpenseBarChart', 'savingsLineChart', 'topExpensesList', 'cumulativeAreaChart'] 
+    reportWidgetOrder: {
+      type: [String],
+      default: [
+        'summaryCards',
+        'expensePieChart',
+        'incomeExpenseBarChart',
+        'savingsLineChart',
+        'topExpensesList',
+        'cumulativeAreaChart',
+      ],
     },
   },
   { timestamps: true }

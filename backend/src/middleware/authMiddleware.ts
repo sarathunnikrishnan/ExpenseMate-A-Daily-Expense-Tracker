@@ -1,56 +1,43 @@
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import User, { IUser } from "../models/User";
-import { addLog } from "../utils/statusLogger";
+/**
+ * @file authMiddleware.ts
+ * @description Authentication middleware for verifying JWT tokens and attaching current user context.
+ */
 
-export interface AuthRequest extends Request {
-  user?: IUser;
-}
+import { Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import User from '../models/User';
+import { config } from '../config/env.config';
+import { AuthRequest } from '../types';
+import { AUTH_MESSAGES } from '../messages';
 
 export const getJwtSecret = (): string => {
-  return process.env.JWT_SECRET || "expense_mate_default_secret_key_2026";
+  return config.jwtSecret;
 };
 
 export const protect = async (
   req: AuthRequest,
   res: Response,
-  next: NextFunction,
-) => {
+  next: NextFunction
+): Promise<Response | void> => {
   let token: string | undefined;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
-      token = req.headers.authorization.split(" ")[1];
-      const secret = getJwtSecret();
-      const decoded = jwt.verify(token, secret) as { id: string };
+      token = req.headers.authorization.split(' ')[1];
+      const decoded: any = jwt.verify(token, getJwtSecret());
+      req.user = (await User.findById(decoded.id).select('-password')) || undefined;
 
-      const user = await User.findById(decoded.id).select("-password");
-      if (!user) {
-        addLog(
-          "warn",
-          "API",
-          `Auth failed: User ID ${decoded.id} no longer exists in database.`,
-        );
-        return res
-          .status(401)
-          .json({ message: "Not authorized, user not found" });
+      if (!req.user) {
+        return res.status(401).json({ message: AUTH_MESSAGES.UNAUTHENTICATED });
       }
 
-      req.user = user as IUser;
       return next();
-    } catch (error: any) {
-      const errMessage = error?.message || String(error);
-      addLog("error", "API", `JWT Auth Error: ${errMessage}`, error?.stack);
-      return res.status(401).json({ message: `Not authorized: ${errMessage}` });
+    } catch (error) {
+      return res.status(401).json({ message: AUTH_MESSAGES.TOKEN_FAILED });
     }
   }
 
   if (!token) {
-    return res
-      .status(401)
-      .json({ message: "Not authorized, no token provided" });
+    return res.status(401).json({ message: AUTH_MESSAGES.NO_TOKEN_PROVIDED });
   }
 };

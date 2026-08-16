@@ -1,3 +1,8 @@
+/**
+ * @file ThemeContext.tsx
+ * @description React Context Provider for managing dark/light theme switching and CSS root class injection.
+ */
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark';

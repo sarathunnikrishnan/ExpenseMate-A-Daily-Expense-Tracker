@@ -1,16 +1,18 @@
+/**
+ * @file App.tsx
+ * @description Main application routing component, protected route wrappers, and global provider tree.
+ */
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
-// Context Providers
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 
-// Layouts
 import MainLayout from './layouts/MainLayout';
 
-// Pages
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -24,8 +26,9 @@ import InvestmentTypes from './pages/InvestmentTypes';
 import Investments from './pages/Investments';
 import Profile from './pages/Profile';
 
-// Protected Route Wrapper
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}): React.ReactElement => {
   const { user } = useAuth();
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -33,7 +36,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-function App() {
+function App(): React.ReactElement {
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -42,11 +45,9 @@ function App() {
             <div className="min-h-screen transition-colors duration-200">
               <Toaster position="top-right" />
               <Routes>
-                {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
-                {/* Protected Routes */}
                 <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/accounts" element={<Accounts />} />

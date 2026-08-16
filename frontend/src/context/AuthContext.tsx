@@ -1,3 +1,8 @@
+/**
+ * @file AuthContext.tsx
+ * @description React Context Provider managing user authentication state, local storage persistence, and login/logout methods.
+ */
+
 import React, { createContext, useContext, useState } from 'react';
 import { User } from '../types';
 
