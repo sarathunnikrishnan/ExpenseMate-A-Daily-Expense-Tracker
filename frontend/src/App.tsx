@@ -25,13 +25,14 @@ import TransactionCategories from './pages/TransactionCategories';
 import InvestmentTypes from './pages/InvestmentTypes';
 import Investments from './pages/Investments';
 import Profile from './pages/Profile';
+import { APP_ROUTES } from './constants';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }): React.ReactElement => {
   const { user } = useAuth();
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={APP_ROUTES.LOGIN} replace />;
   }
   return <>{children}</>;
 };
@@ -45,20 +46,22 @@ function App(): React.ReactElement {
             <div className="min-h-screen transition-colors duration-200">
               <Toaster position="top-right" />
               <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                <Route path={APP_ROUTES.LOGIN} element={<Login />} />
+                <Route path={APP_ROUTES.REGISTER} element={<Register />} />
 
                 <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/accounts" element={<Accounts />} />
-                  <Route path="/transactions" element={<Transactions />} />
-                  <Route path="/budgets" element={<Budgets />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/categories" element={<TransactionCategories />} />
-                  <Route path="/investment-types" element={<InvestmentTypes />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/investments" element={<Investments />} />
-                  <Route path="/profile" element={<Profile />} />
+                  <Route path={APP_ROUTES.HOME} element={<Dashboard />} />
+                  <Route path={APP_ROUTES.ACCOUNTS} element={<Accounts />} />
+                  <Route path={APP_ROUTES.TRANSACTIONS} element={<Transactions />} />
+                  <Route path={APP_ROUTES.BUDGETS} element={<Budgets />} />
+                  <Route path={APP_ROUTES.REPORTS} element={<Reports />} />
+                  <Route path={APP_ROUTES.CATEGORIES} element={<TransactionCategories />} />
+                  <Route path={APP_ROUTES.INVESTMENT_TYPES} element={<InvestmentTypes />} />
+                  <Route path={APP_ROUTES.INVESTMENT_TYPES_ALIAS} element={<InvestmentTypes />} />
+                  <Route path={APP_ROUTES.SETTINGS} element={<Settings />} />
+                  <Route path={APP_ROUTES.INVESTMENTS} element={<Investments />} />
+                  <Route path={APP_ROUTES.PROFILE} element={<Profile />} />
+                  <Route path="*" element={<Navigate to={APP_ROUTES.HOME} replace />} />
                 </Route>
               </Routes>
             </div>
